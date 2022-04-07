@@ -40,6 +40,18 @@
             padding: 5px;
             align-items: center;
         }
+        .more_title{
+            text-decoration: none;
+            color: #07429b;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .more_title:hover{
+            gap: 20px;
+        }
+        .more_title:hover > .t-title{
+            font-size: 19px;
+        }
 
         .task_container button {
             height: 30px;
@@ -99,8 +111,11 @@
             display: flex;
             align-items: center;
             justify-content: space-around;
+            gap: 20px;
         }
-
+        a{
+            text-align: none;
+        }
         .action_btns button {
             display: flex;
             align-items: center;
@@ -137,6 +152,12 @@
         .myCollapse{
             width: 500px;            
         }
+        .task_tab_list{
+            text-decoration: none;
+            color: #07429b;
+            font-size: 18px;
+            font-weight: bold;
+        }
         @media only screen and (max-width: 600px) {
             .myCollapse{
                 width: 90%;
@@ -146,14 +167,14 @@
     </style>
     <main style="margin-bottom: 100px;">
         <div id="Taskdata">
-            <p class="" style="text-indent:20px; color:auto">Recent Tasks</p>
+            <p class="" style="text-indent:20px; color:auto">Recent Notes</p>
             <% if(task.length<1){%>
                 <div class="noTask">
                     <div class="card text-white bg-dark mb-3" style="max-width: 18rem;">
                         <div class="card-header">Opps...</div>
                         <div class="card-body">
-                            <h5 class="card-title">Task Is Empty</h5>
-                            <p class="card-text">Click the plus Icon to add a Task</p>
+                            <h5 class="card-title">Notes Is Empty</h5>
+                            <p class="card-text">Click the plus Icon to add a Note</p>
                         </div>
                     </div>
                 </div>
@@ -172,42 +193,15 @@
                                 <form method="post" action="/edit/<%=taskRef.taskId%>" id="Taskdata"
                                     class="task_container">
                                     <div class="task_tab_list" id="myTaskList">
-                                        <div class="more_title">
+                                        <a href="/view/<%=taskRef.taskId%>" class="more_title">
                                             <p>
-                                                <button class="more_btn" type="button" data-bs-toggle="collapse"
-                                                    data-bs-target="#ref<%=taskRef.taskId%>" aria-expanded="false"
-                                                    aria-controls="ref<%=taskRef.taskId%>">
-                                                    <i class="bi bi-chevron-double-down"></i>
-                                                </button>
+                                                <i class="bi bi-chevron-right"></i>
                                             </p>
-                                            <p>
+                                            <p class="t-title">
                                                 <%=taskRef.task_title%>
                                             </p>
-                                        </div>
-                                    </div>
-                                    <div class="collapse myCollapse" id="ref<%=taskRef.taskId%>">
-                                        <div class="input-group mb-3" style="margin-top: 10px;">
-                                            <span class="input-group-text" id="basic-addon1">Time</span>
-                                            <input name="time" type="time" class="form-control"
-                                                value="<%=taskRef.task_time%>" aria-label="Username"
-                                                aria-describedby="basic-addon1">
-                                        </div>
-                                        <div class="input-group mb-3">
-                                            <span class="input-group-text" id="basic-addon1">Date</span>
-                                            <input type="date" name="date" class="form-control"
-                                                value="<%=taskRef.task_date%>" aria-label="Username"
-                                                aria-describedby="basic-addon1">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="summary-text" class="col-form-label">Summary:</label>
-                                            <textarea class="form-control add_task_summary" id="add_summary-text"
-                                                name="summary"><%=taskRef.task_summary%></textarea>
-                                        </div>
+                                        </a>
                                         <div class="action_btns">
-                                            <button type="submit" class="edit_btn" data-bs-toggle="modal"
-                                                data-bs-target="#editModal" data-bs-whatever="@mdo">
-                                                <i class="bi bi-save"></i>
-                                            </button>
                                             <button
                                                 onclick="window.open('whatsapp://send?text=Have a look at my task for today: title:<%=taskRef.task_title%>; date&time:<%=taskRef.task_date%>, <%=taskRef.task_time%>; task Details: <%=taskRef.task_summary%>')"
                                                 type="button" class="shareButton" data-bs-toggle="modal"
@@ -240,10 +234,11 @@
         </script>
         <script>
             // delete
-            const delBtn = document.getElementById('delBtn');
+            const delBtn = document.querySelectorAll('#delBtn');
             console.log(delBtn.dataset)
-            const endPoint = `/delete/${delBtn.dataset.doc}`;
-            delBtn.addEventListener('click', (e) => {
+            delBtn.forEach((btn)=>{
+            const endPoint = `/delete/${btn.dataset.doc}`;
+            btn.addEventListener('click', (e) => {
                 // function deleteFunc(e) {
                 if (confirm("Proceed to Deleting task?")) {
                     e.preventDefault();
@@ -251,6 +246,7 @@
                         method: 'DELETE'
                     }).then(response => response.json())
                         .then(data => {
+                            console.log(data)
                             if (data.delete == "successfull") {
                                 window.location.reload();
                             } else {
@@ -264,6 +260,7 @@
                 }
                 // }
             })
+        })
 
             const editBtn = document.querySelector('#editBtn');
             editBtn.addEventListener('click', (e) => {

@@ -11,7 +11,10 @@ const { initializeApp, applicationDefault, cert } = require('firebase-admin/app'
 const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 const serviceAccount = require('./todo-service.json');
 const { v4: uuidv4 } = require('uuid');
-const randomeID = uuidv4();
+const crypto = require('crypto');
+const randomId = crypto.randomUUID();
+console.log(randomId)
+
 dotenv.config();
 const methodOverride = require('method-override');
 // app.use(methodOverride('_method'))
@@ -28,17 +31,17 @@ app.use(cookieParser());
 app.set('views', 'views');
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: false }));
-const PORT = process.env.PORT||3000;
+const PORT = process.env.PORT || 3000;
 
 
 
 const config = {
     authRequired: false,
     auth0Logout: true,
-    secret: process.env.SECRET||'cmwiomnionownccionwcwcnmwcwcmwc',
-    baseURL: process.env.BASEURL||'http://localhost:3000',
-    clientID: process.env.CLIENTID||'9T8OEoVBbLFPdbLXcMgEXkqRPjUFpcCV',
-    issuerBaseURL: process.env.ISSUERBASEURL||'https://dev-7pl535xp.us.auth0.com'
+    secret: process.env.SECRET || 'cmwiomnionownccionwcwcnmwcwcmwc',
+    baseURL: process.env.BASEURL || 'http://localhost:3000',
+    clientID: process.env.CLIENTID || '9T8OEoVBbLFPdbLXcMgEXkqRPjUFpcCV',
+    issuerBaseURL: process.env.ISSUERBASEURL || 'https://dev-7pl535xp.us.auth0.com'
 };
 
 // auth router attaches /login, /logout, and /callback routes to the baseURL
@@ -72,6 +75,7 @@ app.get('/', (req, res) => {
 //     res.redirect('/logout')
 // })
 app.get('/home', tokenCb, async (req, res) => {
+    console.log('radnom => ', crypto.randomUUID())
     const userRef = req.oidc.idTokenClaims;
     const data = {
         first_name: userRef.given_name,
@@ -100,6 +104,7 @@ app.get('/home', tokenCb, async (req, res) => {
     let taskData = [];
     const taskRef = await db
         .collection(`users/${resId}/tasks`)
+        .orderBy('createdAt', 'asc')
         .get();
     taskRef.forEach((task) => {
         taskData.push(task.data());
@@ -128,22 +133,32 @@ app.get('/settings', tokenCb, (req, res) => {
 app.post('/addTask', tokenCb, async (req, res) => {
     console.log(req.body);
     const addTask = ({
-        taskId: randomeID,
+        taskId: randomId + new Date().getMilliseconds(),
         task_title: req.body.add_task_title,
-        task_time: req.body.add_task_time,
-        task_date: req.body.add_task_date,
         task_summary: req.body.add_task_summary,
+        updatedAt: 'Never updated',
+        createdAt: FieldValue.serverTimestamp()
     });
-    const dataRef = await db.collection('users').doc(globalToken.id).collection('tasks').add(addTask);
-    console.log(dataRef.id);
-    res.status(200).json({ message: 'successfull' })
+    const noteLimit = 10;
+    const checkTask = await db.collection('users').doc(globalToken.id).collection('tasks').get();;
+    if (checkTask._size == noteLimit) {
+        res.status(200).json({ limit: true })
+    } else {
+        const dataRef = await db.collection('users').doc(globalToken.id).collection('tasks').add(addTask);
+        console.log(dataRef.id);
+        res.status(200).json({ saved: true })
+    }
+    console.log('current tasks =>', checkTask._size)
+
 })
 app.post('/edit/:id', tokenCb, async (req, res) => {
     console.log('body => ', req.body);
     console.log(req.params.id)
-    const task_time = req.body.time;
-    const task_date = req.body.date;
-    const task_summary = req.body.summary;
+    const task_summary = req.body.task_summary;
+    // const updatedAt = new Date().toLocaleString();
+    const updatedAt = FieldValue.serverTimestamp();
+    // const updatedAt = new Date(updatedAt.seconds * 1000).toLocaleString()
+    console.log('updated at => ', updatedAt)
     let taskId = null;
     const taskRef = await db
         .collection(`users/${globalToken.id}/tasks`)
@@ -155,9 +170,8 @@ app.post('/edit/:id', tokenCb, async (req, res) => {
     })
     const tRef = await db.collection('users').doc(globalToken.id)
         .collection('tasks').doc(taskId).set({
-            task_time,
-            task_date,
-            task_summary
+            task_summary,
+            updatedAt
         }, { merge: true });
     console.log(tRef)
     res.redirect('/home')
@@ -177,6 +191,29 @@ app.delete('/delete/:id', tokenCb, async (req, res) => {
     const tRef = await db.collection('users').doc(globalToken.id)
         .collection('tasks').doc(taskId).delete();
     console.log('deleting'.tRef)
-    res.status(200).json({delete:'successfull'})
+    res.status(200).json({ delete: 'successfull' })
 })
-// addTask
+
+// view more 
+app.get('/view/:id', tokenCb, async (req, res) => {
+    let taskList = [];
+    let createdAt = null;
+    let updatedAt = null;
+    const noteRef = await db
+        .collection(`users/${globalToken.id}/tasks`)
+        .where('taskId', '==', `${req.params.id}`)
+        .get();
+    noteRef.forEach((task) => {
+        taskList.push(task.data());
+        console.log((task.id));
+        createdAt = task.data().createdAt;
+        updatedAt = task.data().updatedAt;
+    })
+    console.log(createdAt)
+      const created = new Date(createdAt.seconds * 1000).toUTCString();
+      const updated = new Date(updatedAt.seconds * 1000).toUTCString();
+      const timeStamp = ({created, updated})
+      console.log(timeStamp);
+    console.log(taskList);
+    res.render('notesPreview', { notesData: taskList, timeStamp })
+})

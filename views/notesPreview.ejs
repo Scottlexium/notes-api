@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <style>
+        .previewHeader {
+            height: 70px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            position: fixed;
+            top: 0;
+            background-color: white;
+            z-index: 90;
+        }
+        .head{
+            position: relative;
+            display: flex;
+            width: 100%;
+            align-items: center;
+            height: 70px;
+            box-shadow: 0px 0px 10px 1px rgba(0, 0, 0, 0.055);
+        }
+
+        .head i {
+            background: none;
+            outline: none;
+            border: none;
+            font-size: 24px;
+            margin-left: 40px;
+            height: 40px;
+            width: 40px;
+            font-weight: bolder;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .action_btns {
+            display: flex;
+            width: 100%;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .action_btns button {
+            background: none;
+            outline: none;
+            border: none;
+            font-size: 28px;
+        }
+
+        .editBtn {
+            color: #144fa7;
+        }
+
+        .shareButton {
+            color: #14a762;
+        }
+
+        .bi-trash2-fill {
+            color: rgb(190, 22, 22);
+        }
+
+        .previewCard {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            width: 500px;
+            word-wrap: break-word;
+            background-color: #fff;
+            background-clip: border-box;
+            border: none;
+            border-radius: .25rem;
+        }
+        @media only screen and (max-width: 600px) {
+            .previewCard{
+                width: 90%;
+            }
+}
+       
+        textarea {
+            height: 400px;
+        }
+
+        .preview_main {
+            display: flex;
+            justify-content: center;
+            margin-top: 80px;
+            margin-bottom: 100px;
+        }
+        .editTextarea{
+            width: 100%;
+            border: solid 0.5px rgba(0, 0, 0, 0.055);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px 1px rgba(0, 0, 0, 0.055);
+        }
+    </style>
+
+
+    <header class="previewHeader">
+        <div class="head">
+            <i onclick="history.back()" class="bi bi-chevron-left">
+                <button> </button>
+            </i>
+            <h1>Notes Preview</h1>
+        </div>
+    </header>
+    <main class="preview_main">
+        <% for (let i=0; i < notesData.length; i++) { %>
+            <% const notes=notesData[i]; %>
+                <div class="previewCard">
+                    <form action="/edit/<%=notes.taskId%>" method="post" class="card-body">
+                        <h5 class="card-title">
+                            <h2>
+                                Title: <%=notes.task_title%>
+                            </h2>
+                        </h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Created: <%=timeStamp.created%>
+                        </h6>
+                        <% if(timeStamp.updated == 'Invalid Date'){%>
+                            <h6 class="card-subtitle mb-2 text-muted">Updated: Never Updated
+                            </h6>
+                        <% }else{ %>
+                            <h6 class="card-subtitle mb-2 text-muted">Updated: <%=timeStamp.updated%>
+                            </h6>
+                        <%}%>
+                        
+                        <div class="input-group">
+                            <textarea name="task_summary" class="editTextarea" aria-label="With textarea"><%=notes.task_summary%></textarea>
+                        </div>
+                        <div class="action_btns">
+                            <button onclick="this.form.submit()" type="button" id="editBtn" class="editBtn" data-bs-toggle="modal" data-bs-target=""
+                                data-bs-whatever="@mdo">
+                                <i class="bi bi-save"></i>
+                            </button>
+                            <button
+                                onclick="window.open('whatsapp://send?text=Have a look at my task for today: title:<%=notes.task_title%>; date&time:<%=notes.task_date%>, <%=notes.task_time%>; task Details: <%=notes.task_summary%>')"
+                                type="button" class="shareButton" data-bs-toggle="modal" data-bs-target=""
+                                data-bs-whatever="@mdo">
+                                <i class="bi bi-share-fill"></i>
+                            </button>
+
+                            <button type="button" id="delBtn" class="deleteBtn" data-doc="<%=notes.taskId%>"
+                                data-bs-whatever="@mdo">
+                                <i class="bi bi-trash2-fill"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <% } %>
+    </main>
+    <%-include('./partials/bottom.ejs')%>
+    <script>
+                    // delete
+                    const delBtn = document.querySelector('#delBtn');
+            console.log(delBtn.dataset)
+            const endPoint = `/delete/${delBtn.dataset.doc}`;
+            delBtn.addEventListener('click', (e) => {
+                // function deleteFunc(e) {
+                if (confirm("Proceed to Deleting task?")) {
+                    e.preventDefault();
+                    fetch(endPoint, {
+                        method: 'DELETE'
+                    }).then(response => response.json())
+                        .then(data => {
+                            console.log(data)
+                            if (data.delete == "successfull") {
+                                location.assign('/home');
+                            } else {
+                                alert('An Error Occured')
+                            }
+                            console.log('Success:', data);
+                        })
+                        .catch(err => console.log(err));
+                } else {
+                    console.log('Dont delete')
+                }
+                // }
+            })
+    </script>
+</body>
+
+</html>

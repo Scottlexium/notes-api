@@ -20,6 +20,7 @@
         justify-content: center;
         left: 0;
         align-items: center;
+        z-index: 99;
     }
 
     .header_txt {
@@ -150,7 +151,7 @@
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="addModalLabel">Add Task</h5>
+                            <h5 class="modal-title" id="addModalLabel">Add Note</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <!-- The modal body -->
@@ -161,17 +162,7 @@
                                     <input type="text" class="form-control add_task-title" id="add_title-name" name="title">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="date-time" class="col-form-label">Date:</label>
-                                    <input type="date" class="form-control add_task_date" id="add_date"
-                                        name="date-date">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="date-time" class="col-form-label">Time:</label>
-                                    <input type="time" class="form-control add_task_time" id="add_time"
-                                        name="date-time">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="summary-text" class="col-form-label">Summary:</label>
+                                    <label for="summary-text" class="col-form-label">Note:</label>
                                     <textarea class="form-control add_task_summary" id="add_summary-text"
                                         name="summary-text"></textarea>
                                 </div>
@@ -204,10 +195,8 @@
         console.log('add data')
         e.preventDefault();
         const add_task_title = document.querySelector('.add_task-title').value;
-        const add_task_date = document.querySelector('.add_task_date').value;
-        const add_task_time = document.querySelector('.add_task_time').value;
         const add_task_summary = document.querySelector('.add_task_summary').value;
-        const data = { add_task_title, add_task_date,add_task_time, add_task_summary };
+        const data = { add_task_title, add_task_summary };
 
         try {
             fetch('/addTask', {
@@ -219,7 +208,13 @@
             })
                 .then(response => response.json())
                 .then(data => {
-                    data.message == 'successfull'? location.reload() : alert('An Error Occured')
+                    if (data.limit) {
+                        alert('Maximum Number of Notes (10) reached')
+                    }
+                    else if(data.saved){
+                        location.reload();
+                    }
+
                     console.log('Success:', data);
                 })
                 .catch((error) => {
